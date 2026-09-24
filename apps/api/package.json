@@ -1,0 +1,22 @@
+{
+  "name": "@clips-poster/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@clips-poster/config": "*",
+    "@clips-poster/database": "*",
+    "@clips-poster/kick": "*",
+    "@clips-poster/shared": "*",
+    "@clips-poster/twitch": "*",
+    "bullmq": "^6.3.4",
+    "fastify": "^5.12.3",
+    "ioredis": "^6.0.0"
+  }
+}

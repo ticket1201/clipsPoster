@@ -1,0 +1,16 @@
+{
+  "name": "@clips-poster/twitch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@clips-poster/database": "*",
+    "@clips-poster/shared": "*",
+    "zod": "^4.6.1"
+  }
+}

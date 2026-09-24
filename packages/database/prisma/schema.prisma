@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SourcePlatform {
+  TWITCH
+  KICK
+}
+
+enum PublishingPlatform {
+  YOUTUBE
+  TIKTOK
+  INSTAGRAM
+}
+
+enum ClipStatus {
+  DISCOVERED
+  TRACKING
+  CANDIDATE
+  SELECTED
+  DOWNLOADED
+  PROCESSED
+  APPROVED
+  DRAFTED
+  PUBLISHED
+  REJECTED
+  FAILED
+}
+
+enum PublicationStatus {
+  UPLOADING
+  PROCESSING
+  DELIVERED
+  PUBLISHED
+  FAILED
+}
+
+model ContentAccount {
+  id                      String              @id @default(uuid()) @db.Uuid
+  platform                PublishingPlatform
+  externalId              String?
+  username                String
+  displayName             String?
+  avatarUrl               String?
+  accessTokenEncrypted    String?
+  refreshTokenEncrypted   String?
+  accessTokenExpiresAt    DateTime?
+  refreshTokenExpiresAt   DateTime?
+  authorizedScopes        String?
+  connectedAt             DateTime?
+  active                  Boolean             @default(true)
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  assignments             ChannelAssignment[]
+  publications            Publication[]
+
+  @@unique([platform, username])
+  @@unique([platform, externalId])
+  @@index([active, platform])
+}
+
+model TwitchChannel {
+  id           String              @id @default(uuid()) @db.Uuid
+  twitchId     String              @unique
+  login        String              @unique
+  displayName  String
+  language     String?
+  thumbnailUrl String?
+  webcamX     Float?
+  webcamY     Float?
+  webcamWidth Float?
+  webcamHeight Float?
+  webcamOnly   Boolean             @default(false)
+  active       Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  assignments  ChannelAssignment[]
+  clips        Clip[]
+
+  @@index([active])
+}
+
+model KickChannel {
+  id                String              @id @default(uuid()) @db.Uuid
+  kickId            String              @unique
+  broadcasterUserId String?             @unique
+  slug              String              @unique
+  displayName       String
+  language          String?
+  thumbnailUrl      String?
+  webcamX           Float?
+  webcamY           Float?
+  webcamWidth       Float?
+  webcamHeight      Float?
+  webcamOnly        Boolean             @default(false)
+  active            Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  assignments       ChannelAssignment[]
+  clips             Clip[]
+
+  @@index([active])
+}
+
+model ChannelAssignment {
+  id               String         @id @default(uuid()) @db.Uuid
+  platform         PublishingPlatform
+  contentAccountId String         @db.Uuid
+  twitchChannelId  String?        @db.Uuid
+  kickChannelId    String?        @db.Uuid
+  active           Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  contentAccount   ContentAccount @relation(fields: [contentAccountId], references: [id], onDelete: Cascade)
+  twitchChannel    TwitchChannel? @relation(fields: [twitchChannelId], references: [id], onDelete: Cascade)
+  kickChannel      KickChannel?   @relation(fields: [kickChannelId], references: [id], onDelete: Cascade)
+
+  @@unique([contentAccountId, twitchChannelId])
+  @@unique([contentAccountId, kickChannelId])
+  @@index([active, contentAccountId])
+  @@index([twitchChannelId])
+  @@index([kickChannelId])
+}
+
+model Clip {
+  id                String         @id @default(uuid()) @db.Uuid
+  source            SourcePlatform
+  externalId        String
+  twitchChannelId   String?        @db.Uuid
+  kickChannelId     String?        @db.Uuid
+  title             String
+  gameName          String?
+  url               String
+  embedUrl          String?
+  thumbnailUrl      String?
+  creatorExternalId String?
+  creatorName       String?
+  language          String?
+  durationSeconds   Float?
+  currentViews      Int            @default(0)
+  sourceCreatedAt   DateTime
+  discoveredAt      DateTime       @default(now())
+  lastObservedAt    DateTime       @default(now())
+  status            ClipStatus     @default(DISCOVERED)
+  viralScore        Float?
+  rawFilePath       String?
+  processedFilePath String?
+  tiktokFilePath    String?
+  processingError   String?
+  processedAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  twitchChannel     TwitchChannel? @relation(fields: [twitchChannelId], references: [id], onDelete: Cascade)
+  kickChannel       KickChannel?   @relation(fields: [kickChannelId], references: [id], onDelete: Cascade)
+  metrics           ClipMetric[]
+  publications      Publication[]
+
+  @@unique([source, externalId])
+  @@index([source, sourceCreatedAt])
+  @@index([status, viralScore])
+  @@index([twitchChannelId, sourceCreatedAt])
+  @@index([kickChannelId, sourceCreatedAt])
+}
+
+model Publication {
+  id               String            @id @default(uuid()) @db.Uuid
+  platform         PublishingPlatform
+  clipId           String            @db.Uuid
+  contentAccountId String            @db.Uuid
+  externalId       String?
+  platformPostId   String?
+  status           PublicationStatus @default(UPLOADING)
+  title            String
+  privacyLevel     String
+  allowComment     Boolean           @default(false)
+  allowDuet        Boolean           @default(false)
+  allowStitch      Boolean           @default(false)
+  brandOrganic     Boolean           @default(false)
+  brandContent     Boolean           @default(false)
+  isAigc           Boolean           @default(false)
+  error            String?
+  publishedAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  clip             Clip              @relation(fields: [clipId], references: [id], onDelete: Cascade)
+  contentAccount   ContentAccount    @relation(fields: [contentAccountId], references: [id], onDelete: Cascade)
+  metrics          PublicationMetric[]
+
+  @@unique([platform, externalId])
+  @@index([clipId, createdAt])
+  @@index([contentAccountId, createdAt])
+  @@index([status, updatedAt])
+  @@index([platform, platformPostId])
+}
+
+model PublicationMetric {
+  id            String      @id @default(uuid()) @db.Uuid
+  publicationId String      @db.Uuid
+  recordedAt    DateTime    @default(now())
+  views         BigInt      @default(0)
+  likes         BigInt      @default(0)
+  comments      BigInt      @default(0)
+  shares        BigInt?
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+
+  @@index([publicationId, recordedAt])
+  @@index([recordedAt])
+}
+
+model ClipMetric {
+  id                 String   @id @default(uuid()) @db.Uuid
+  clipId             String   @db.Uuid
+  recordedAt         DateTime @default(now())
+  views              Int
+  viewsPerMinute     Float?
+  viewsLast5Minutes  Int?
+  viewsLast15Minutes Int?
+  viewsLast60Minutes Int?
+  acceleration       Float?
+  clip               Clip     @relation(fields: [clipId], references: [id], onDelete: Cascade)
+
+  @@unique([clipId, recordedAt])
+  @@index([recordedAt])
+  @@index([viewsPerMinute])
+}

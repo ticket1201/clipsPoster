@@ -1,0 +1,25 @@
+{
+  "name": "@clips-poster/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "collect:kick": "tsx src/collect-kick.ts",
+    "collect:twitch": "tsx src/collect-twitch.ts",
+    "score:clips": "tsx src/recalculate-viral-scores.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@clips-poster/config": "*",
+    "@clips-poster/database": "*",
+    "@clips-poster/kick": "*",
+    "@clips-poster/media": "*",
+    "@clips-poster/shared": "*",
+    "@clips-poster/twitch": "*",
+    "bullmq": "^6.3.4",
+    "ioredis": "^6.0.0"
+  }
+}
